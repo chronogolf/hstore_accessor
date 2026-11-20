@@ -13,8 +13,17 @@ module HstoreAccessor
     TYPES.default = ActiveRecord::Type::Value
 
     class << self
+      # Resolve the calling model's connection only for modern column metadata.
       def column_type_for(attribute, data_type)
-        ActiveRecord::ConnectionAdapters::Column.new(attribute.to_s, nil, TYPES[data_type].new)
+        metadata = if Gem::Version.new(ActiveRecord::VERSION::STRING) >= Gem::Version.new("7.2")
+                     ActiveRecord::ConnectionAdapters::SqlTypeMetadata.new(
+                       sql_type: yield.type_to_sql(data_type),
+                       type: data_type
+                     )
+                   else
+                     TYPES[data_type].new
+                   end
+        ActiveRecord::ConnectionAdapters::Column.new(attribute.to_s, nil, metadata)
       end
 
       def cast(type, value)
