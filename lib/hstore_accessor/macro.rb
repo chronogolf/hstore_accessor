@@ -27,7 +27,7 @@ module HstoreAccessor
           singleton_class.send(:define_method, :column_for_attribute) do |attribute|
             data_type = @@hstore_keys_and_types[attribute.to_s]
             if data_type
-              TypeHelpers.column_type_for(attribute.to_s, data_type)
+              TypeHelpers.column_type_for(attribute.to_s, data_type) { connection }
             else
               super(attribute)
             end
@@ -102,8 +102,8 @@ module HstoreAccessor
 
             define_method("reset_#{key}!") do
               if ActiveRecord::VERSION::STRING.to_f >= 4.2
-                ActiveSupport::Deprecation.warn(<<-MSG.squish)
-                  `#reset_#{key}!` is deprecated and will be removed on Rails 5.
+                HstoreAccessor.deprecator.warn(<<-MSG.squish)
+                  `#reset_#{key}!` is deprecated.
                   Please use `#restore_#{key}!` instead.
                 MSG
               end
